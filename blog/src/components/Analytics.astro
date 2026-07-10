@@ -1,0 +1,7 @@
+---
+// Analytics placeholder — swap the data-domain and src for your provider.
+// Recommended: Plausible (plausible.io) or Umami (umami.is).
+const domain = Astro.site?.hostname ?? "mobileinfra.blog";
+---
+
+<script is:inline defer data-domain={domain} src="https://plausible.io/js/script.js"></script>

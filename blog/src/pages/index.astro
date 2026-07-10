@@ -1,0 +1,65 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PostPreview from "../components/PostPreview.astro";
+import Analytics from "../components/Analytics.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("blog"))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<BaseLayout title="Home">
+  <Analytics slot="head" />
+
+  <section class="hero">
+    <h1>Mobile Infrastructure & Automation</h1>
+    <p class="subtitle">
+      Two posts per week on CI/CD, device labs, build systems, and mobile DevOps.
+    </p>
+  </section>
+
+  <section class="posts">
+    <h2>Latest Posts</h2>
+    {posts.length > 0 ? (
+      posts.map((post) => <PostPreview post={post} />)
+    ) : (
+      <p class="empty">No posts yet. Stay tuned!</p>
+    )}
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    text-align: center;
+    padding: 4rem 0 3rem;
+  }
+
+  .hero h1 {
+    font-size: 2.5rem;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+  }
+
+  .subtitle {
+    font-size: 1.15rem;
+    color: var(--color-text-muted);
+    max-width: 540px;
+    margin: 0 auto;
+  }
+
+  .posts {
+    padding-top: 1rem;
+  }
+
+  .posts h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty {
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: 3rem 0;
+  }
+</style>

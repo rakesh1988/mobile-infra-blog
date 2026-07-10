@@ -1,0 +1,26 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PostPreview from "../../components/PostPreview.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("blog"))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<BaseLayout title="Archive">
+  <h1>All Posts</h1>
+  {posts.length > 0 ? (
+    posts.map((post) => <PostPreview post={post} />)
+  ) : (
+    <p class="empty">No posts yet.</p>
+  )}
+</BaseLayout>
+
+<style>
+  .empty {
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: 3rem 0;
+  }
+</style>

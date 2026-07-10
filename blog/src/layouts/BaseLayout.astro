@@ -1,0 +1,163 @@
+---
+import "../styles/global.css";
+
+export interface Props {
+  title: string;
+  description?: string;
+  pubDate?: Date;
+  tags?: string[];
+}
+
+const { title, description, pubDate, tags } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description ?? "Mobile Infrastructure & Automation Blog"} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="application/rss+xml" title="Blog RSS" href="/rss.xml" />
+    <title>{title} — Mobile Infra Blog</title>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="/" class="logo">Mobile Infra Blog</a>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/blog">Archive</a>
+          <a href="/rss.xml">RSS</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <article class="content">
+        {pubDate && (
+          <time datetime={pubDate.toISOString()}>
+            {pubDate.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </time>
+        )}
+        {tags && tags.length > 0 && (
+          <div class="tags">
+            {tags.map((tag) => <span class="tag">{tag}</span>)}
+          </div>
+        )}
+        <slot />
+      </article>
+    </main>
+
+    <footer>
+      <p>&copy; {new Date().getFullYear()} Mobile Infrastructure & Automation Blog</p>
+    </footer>
+
+    <style is:global>
+      header {
+        border-bottom: 1px solid var(--color-border);
+        padding: 1rem 2rem;
+      }
+
+      nav {
+        max-width: var(--max-width);
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--color-text);
+      }
+
+      .logo:hover {
+        color: var(--color-primary);
+        text-decoration: none;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 1.5rem;
+      }
+
+      main {
+        max-width: var(--max-width);
+        margin: 3rem auto;
+        padding: 0 2rem;
+      }
+
+      .content {
+        line-height: 1.8;
+      }
+
+      .content h1 {
+        font-size: 2.2rem;
+        line-height: 1.2;
+        margin-bottom: 0.5rem;
+      }
+
+      .content h2 {
+        font-size: 1.6rem;
+        margin: 2rem 0 0.75rem;
+      }
+
+      .content h3 {
+        font-size: 1.25rem;
+        margin: 1.5rem 0 0.5rem;
+      }
+
+      .content p {
+        margin: 1.25rem 0;
+      }
+
+      .content ul,
+      .content ol {
+        margin: 1rem 0;
+        padding-left: 1.5rem;
+      }
+
+      .content li {
+        margin: 0.4rem 0;
+      }
+
+      time {
+        display: block;
+        color: var(--color-text-muted);
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+      }
+
+      .tags {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+      }
+
+      .tag {
+        background: var(--color-card-bg);
+        border: 1px solid var(--color-border);
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+      }
+
+      footer {
+        border-top: 1px solid var(--color-border);
+        padding: 2rem;
+        text-align: center;
+        color: var(--color-text-muted);
+        font-size: 0.85rem;
+      }
+    </style>
+  </body>
+</html>
