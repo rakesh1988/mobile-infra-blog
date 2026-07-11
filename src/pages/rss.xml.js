@@ -9,12 +9,15 @@ export async function GET(context) {
     description:
       "Two posts per week on mobile CI/CD, device labs, build systems, and DevOps.",
     site: context.site,
-    items: posts.map((post) => ({
-      title: post.data.title,
-      pubDate: post.data.pubDate,
-      description: post.data.description,
-      link: `/blog/${post.slug}/`,
-    })),
+    items: posts.map((post) => {
+      const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+      return {
+        title: post.data.title,
+        pubDate: post.data.pubDate,
+        description: post.data.description,
+        link: `${baseUrl}${post.slug}/`,
+      };
+    }),
     customData: "<language>en-us</language>",
   });
 }

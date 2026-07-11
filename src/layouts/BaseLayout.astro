@@ -9,6 +9,7 @@ export interface Props {
 }
 
 const { title, description, pubDate, tags } = Astro.props;
+const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 ---
 
 <!doctype html>
@@ -18,18 +19,18 @@ const { title, description, pubDate, tags } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description ?? "Mobile Infrastructure & Automation Blog"} />
     <meta name="generator" content={Astro.generator} />
-    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
-    <link rel="alternate" type="application/rss+xml" title="Blog RSS" href={`${import.meta.env.BASE_URL}rss.xml`} />
+    <link rel="icon" type="image/svg+xml" href={`${baseUrl}favicon.svg`} />
+    <link rel="alternate" type="application/rss+xml" title="Blog RSS" href={`${baseUrl}rss.xml`} />
     <title>{title} — Mobile Infra Blog</title>
   </head>
   <body>
     <header>
       <nav>
-        <a href={import.meta.env.BASE_URL} class="logo">Mobile Infra Blog</a>
+        <a href={baseUrl} class="logo">Mobile Infra Blog</a>
         <div class="nav-links">
-          <a href={import.meta.env.BASE_URL}>Home</a>
-          <a href={`${import.meta.env.BASE_URL}archive/`}>Archive</a>
-          <a href={`${import.meta.env.BASE_URL}rss.xml`}>RSS</a>
+          <a href={baseUrl}>Home</a>
+          <a href={`${baseUrl}archive/`}>Archive</a>
+          <a href={`${baseUrl}rss.xml`}>RSS</a>
         </div>
       </nav>
     </header>
