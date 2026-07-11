@@ -1,6 +1,6 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import PostPreview from "../../components/PostPreview.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PostPreview from "../components/PostPreview.astro";
 import { getCollection } from "astro:content";
 
 const posts = (await getCollection("blog"))
