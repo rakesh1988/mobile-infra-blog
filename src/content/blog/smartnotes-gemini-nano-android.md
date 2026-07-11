@@ -1,6 +1,6 @@
 ---
 title: "Building SmartNotes: On-Device AI with Gemini Nano and Jetpack Compose"
-description: "A deep dive into building a modern Android note-taking app with on-device AI using Gemini Nano, Room, Hilt, and Jetpack Compose."
+description: "A deep dive into building a modern Android note-taking app with on-device AI using ML Kit's GenAI APIs, Room, Hilt, and Jetpack Compose."
 pubDate: 2026-07-10
 tags: ["android", "gemini-nano", "jetpack-compose", "on-device-ai", "architecture"]
 draft: false
@@ -8,319 +8,265 @@ draft: false
 
 ## Introduction
 
-On-device AI is reshaping what mobile apps can do. Users expect intelligent features — auto-summarization, smart categorization, contextual suggestions — but they also demand privacy and offline functionality. Google's Gemini Nano, part of the AICore suite on Android 16+, delivers exactly that: capable language models that run entirely on-device with no network calls and no data leaving the device.
+In mobile systems engineering, offloading high-frequency NLP tasks like text summarization to cloud-based LLMs introduces three primary bottlenecks: network latency overhead, recurring operational costs, and data governance liabilities around GDPR/CCPA compliance.
 
-In this post, we'll walk through **SmartNotes**, a note-taking Android app we built that leverages Gemini Nano for three AI-powered features:
+To resolve these bottlenecks in **SmartNotes**, we integrated Google's **ML Kit GenAI APIs** — a high-level abstraction built on top of [AICore](https://android-developers.googleblog.com/2023/12/a-new-foundation-for-ai-on-android.html), Android's system service for on-device Gemini Nano execution. This transition eliminates runtime API costs, removes network dependencies entirely, and processes all user data locally on the device.
 
-- **Summarize** — condense a note into three bullet points
-- **Auto-Title** — generate a concise title from the body content
-- **Categorize** — classify a note as Work, Personal, Idea, Todo, or Uncategorized
-
-All AI runs locally. No API keys, no server costs, no privacy concerns.
+This post covers the architecture decisions, the correct integration path via ML Kit, and the real-world constraints you need to plan for.
 
 ---
 
-## Architecture Overview
+## What the Stack Actually Is
 
-SmartNotes follows a modern Android architecture with three core principles:
+It is important to understand the layering before writing any code:
 
-- **Multi-module** — separate `:core:database`, `:core:ai`, and `:core:ui` modules for clear boundaries and independent testability
-- **Unidirectional data flow** — screens observe `StateFlow` from ViewModels and dispatch events back
-- **Dependency injection** — Hilt wires the entire dependency graph, making the app testable by construction
+```
+┌─────────────────────────────────┐
+│         SmartNotes App          │
+├─────────────────────────────────┤
+│     ML Kit GenAI APIs           │  ← your integration point
+│  (com.google.mlkit:genai-*)     │
+├─────────────────────────────────┤
+│          AICore                 │  ← Android system service
+│  (manages Gemini Nano on device)│
+├─────────────────────────────────┤
+│         Gemini Nano             │  ← the model (nano-v2 / nano-v3)
+└─────────────────────────────────┘
+```
 
-### Tech Stack
-
-| Component | Choice |
-|-----------|--------|
-| Language | Kotlin 2.1.0 |
-| UI | Jetpack Compose + Material 3 |
-| DI | Hilt 2.53.1 |
-| Database | Room 2.6.1 |
-| AI | ML Kit AICore + Gemini Nano |
-| Navigation | Navigation Compose 2.8.5 |
-| Build | Gradle 8.11.1 with Version Catalog |
-| Min SDK | 26 (AICore features require 16+) |
+You do **not** talk to AICore directly. ML Kit's GenAI APIs are the public interface. AICore is the system-level runtime that handles model lifecycle, quota enforcement, and privacy isolation — it is not a library you import.
 
 ---
 
-## Data Layer: Room Database
+## Modular Gradle Architecture
 
-The data model is intentionally simple — a single `Note` entity with fields for the note body, title, category, and timestamps:
+We structure the AI engine as decoupled Gradle modules to prevent tight coupling between the presentation layer and the ML Kit dependencies:
 
-```kotlin
-@Entity(tableName = "notes")
-data class Note(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val title: String = "",
-    val body: String = "",
-    val category: String = "UNCATEGORIZED",
-    val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
-)
+```
+┌──────────────┐
+│    :app      │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  :core:ui    │
+└──────┬───────┘
+       │
+  ┌────┴────────────────┐
+  ▼                     ▼
+┌──────────────┐  ┌──────────────┐
+│  :core:ai    │  │:core:database│
+│ (Contracts)  │  │  (Room DB)   │
+└──────────────┘  └──────────────┘
+       ▲
+       │ (Runtime Binding)
+┌──────────────┐
+│:core:ai-impl │  (ML Kit GenAI)
+└──────────────┘
 ```
 
-The DAO exposes reactive `Flow` queries for real-time UI updates:
+The interface contracts in `:core:ai` keep `:core:ui` decoupled from ML Kit at compile time. This means standard CI runs — on non-Pixel Linux VMs — can mock the AI layer entirely and never pull in the ML Kit GenAI dependency.
+
+---
+
+## Gradle Dependencies
+
+Add the ML Kit Summarization API to your `:core:ai-impl` module's `build.gradle.kts`:
 
 ```kotlin
-@Dao
-interface NoteDao {
-    @Query("SELECT * FROM notes ORDER BY updatedAt DESC")
-    fun getAllNotes(): Flow<List<Note>>
-
-    @Query("SELECT * FROM notes WHERE id = :id")
-    fun getNoteById(id: Long): Flow<Note?>
-
-    @Query("SELECT * FROM notes WHERE title LIKE '%' || :query || '%' OR body LIKE '%' || :query || '%' ORDER BY updatedAt DESC")
-    fun searchNotes(query: String): Flow<List<Note>>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertNote(note: Note): Long
-
-    @Delete
-    suspend fun deleteNote(note: Note)
-}
+// Requires Android API level 26 (Android 8.0) or higher
+implementation("com.google.mlkit:genai-summarization:1.0.0-beta1")
 ```
 
-The `NoteRepository` wraps the DAO and is injected as a singleton via Hilt:
+This is the only dependency you need for summarization. The Gemini Nano model weights themselves are **not bundled in your APK** — they are managed and shared by AICore at the system level. If Gemini Nano is already present on the device (shared across apps), only a small feature-specific LoRA adapter is downloaded. Your APK binary impact is minimal.
+
+---
+
+## Device Support
+
+ML Kit GenAI APIs are **not** available on all Android devices. Support is tied to specific hardware that has Gemini Nano provisioned by AICore. As of mid-2026, supported devices include:
+
+- **Google**: Pixel 9, Pixel 9 Pro, Pixel 9 Pro XL, Pixel 9 Pro Fold, Pixel 10 series
+- **Samsung**: Galaxy S25, S25+, S25 Ultra, S26 series, Z Fold7, Z TriFold
+- **Xiaomi**: Xiaomi 15, 15 Ultra, 15T, 15T Pro, 17 series
+- **OnePlus**: OnePlus 13, 13s, 15, 15R
+- **OPPO, vivo, Motorola, Honor, POCO, realme, Sharp, Lenovo, iQOO**: selected flagship models
+
+Two Gemini Nano variants are in the field — `nano-v2` and `nano-v3` — running on different device families. Outputs can differ between variants. Always call `checkFeatureStatus()` at runtime rather than assuming availability from the device model name.
+
+---
+
+## On-Device Summarization Implementation
+
+The `SummarizationService` in `:core:ai-impl` wraps ML Kit's API behind the `AiService` interface contract:
 
 ```kotlin
+package com.example.smartnotes.core.aiimpl
+
+import android.content.Context
+import com.google.mlkit.genai.summarization.Summarization
+import com.google.mlkit.genai.summarization.SummarizationRequest
+import com.google.mlkit.genai.summarization.SummarizerOptions
+import com.google.mlkit.genai.summarization.SummarizerOptions.InputType
+import com.google.mlkit.genai.summarization.SummarizerOptions.OutputType
+import com.google.mlkit.genai.summarization.SummarizerOptions.Language
+import com.google.mlkit.genai.common.FeatureStatus
+import com.google.mlkit.genai.common.DownloadCallback
+import com.google.mlkit.genai.common.GenAiException
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.suspendCancellableCoroutine
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+
 @Singleton
-class NoteRepository @Inject constructor(
-    private val noteDao: NoteDao
-) {
-    fun getAllNotes(): Flow<List<Note>> = noteDao.getAllNotes()
-    fun searchNotes(query: String): Flow<List<Note>> = noteDao.searchNotes(query)
-    suspend fun upsertNote(note: Note): Long = noteDao.upsertNote(note)
-    suspend fun deleteNoteById(id: Long) = noteDao.deleteNoteById(id)
-}
-```
+class SummarizationService @Inject constructor(
+    @ApplicationContext private val context: Context
+) : AiService {
 
----
+    private val summarizerOptions = SummarizerOptions.builder(context)
+        .setInputType(InputType.ARTICLE)
+        .setOutputType(OutputType.THREE_BULLETS)
+        .setLanguage(Language.ENGLISH)
+        .build()
 
-## AI Service Layer: Gemini Nano
+    private val summarizer = Summarization.getClient(summarizerOptions)
 
-The AI layer is designed around an interface first, keeping the implementation swappable:
+    /**
+     * Checks feature availability and triggers a download if needed,
+     * then runs inference with a streaming callback.
+     *
+     * IMPORTANT: AICore only permits inference when the app is the
+     * top foreground application. Background / foreground service
+     * calls will receive ErrorCode.BACKGROUND_USE_BLOCKED.
+     */
+    override suspend fun summarize(
+        text: String,
+        onPartialResult: (String) -> Unit
+    ) {
+        val featureStatus = summarizer.checkFeatureStatus().await()
 
-```kotlin
-data class AiResult(
-    val text: String,
-    val confidence: Float? = null,
-    val latencyMs: Long = 0
-)
-
-interface AiService {
-    fun summarize(text: String): Flow<AiResult>
-    fun generateTitle(text: String): Flow<AiResult>
-    fun categorize(text: String): Flow<AiResult>
-}
-```
-
-### Gemini Nano Implementation
-
-The `GeminiNanoAiService` uses `Flow` to emit progressive results — an initial empty emission for immediate UI feedback, followed by the final inference result:
-
-```kotlin
-@Singleton
-class GeminiNanoAiService @Inject constructor() : AiService {
-
-    override fun summarize(text: String): Flow<AiResult> = flow {
-        val startTime = System.currentTimeMillis()
-        emit(AiResult(text = "", confidence = null, latencyMs = 0))
-        // Gemini Nano inference via ML Kit AICore
-        emit(
-            AiResult(
-                text = "- Summary point 1\n- Summary point 2\n- Summary point 3",
-                confidence = 0.85f,
-                latencyMs = System.currentTimeMillis() - startTime
-            )
-        )
-    }
-
-    override fun generateTitle(text: String): Flow<AiResult> = flow {
-        val startTime = System.currentTimeMillis()
-        emit(AiResult(text = "", confidence = null, latencyMs = 0))
-        emit(
-            AiResult(
-                text = "Smart Note",
-                confidence = 0.75f,
-                latencyMs = System.currentTimeMillis() - startTime
-            )
-        )
-    }
-
-    override fun categorize(text: String): Flow<AiResult> = flow {
-        val startTime = System.currentTimeMillis()
-        emit(AiResult(text = "", confidence = null, latencyMs = 0))
-        emit(
-            AiResult(
-                text = "IDEA",
-                confidence = 0.9f,
-                latencyMs = System.currentTimeMillis() - startTime
-            )
-        )
-    }
-}
-```
-
-### Dependency Injection
-
-Hilt wires the AI service through an abstract module, keeping construction centralized:
-
-```kotlin
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class AiModule {
-
-    @Binds
-    @Singleton
-    abstract fun bindAiService(impl: GeminiNanoAiService): AiService
-}
-```
-
-The same pattern applies to the database module, which provides the Room database and DAO:
-
-```kotlin
-@Module
-@InstallIn(SingletonComponent::class)
-object DatabaseModule {
-
-    @Provides
-    @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): SmartNotesDatabase {
-        return Room.databaseBuilder(
-            context,
-            SmartNotesDatabase::class.java,
-            "smartnotes.db"
-        ).build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideNoteDao(database: SmartNotesDatabase): NoteDao {
-        return database.noteDao()
-    }
-}
-```
-
----
-
-## UI Layer: Jetpack Compose + Navigation
-
-### Navigation Graph
-
-The app has two screens — note list and note editor — wired through Navigation Compose:
-
-```kotlin
-@Composable
-fun SmartNotesNavGraph() {
-    val navController = rememberNavController()
-
-    NavHost(navController = navController, startDestination = "note_list") {
-        composable("note_list") {
-            NoteListScreen(navController = navController)
-        }
-        composable("note_editor/{noteId}") {
-            NoteEditorScreen(navController = navController)
-        }
-        composable("note_editor/new") {
-            NoteEditorScreen(navController = navController)
+        when (featureStatus) {
+            FeatureStatus.UNAVAILABLE -> {
+                throw UnsupportedOperationException(
+                    "Gemini Nano is not available on this device."
+                )
+            }
+            FeatureStatus.DOWNLOADABLE -> {
+                // Trigger explicit download first, then infer.
+                // If skipped, the first runInference call will
+                // also trigger download — but explicit is better UX.
+                suspendCancellableCoroutine { cont ->
+                    summarizer.downloadFeature(object : DownloadCallback {
+                        override fun onDownloadStarted(bytesToDownload: Long) {}
+                        override fun onDownloadProgress(totalBytesDownloaded: Long) {}
+                        override fun onDownloadCompleted() = cont.resume(Unit)
+                        override fun onDownloadFailed(e: GenAiException) =
+                            cont.resumeWithException(e)
+                    })
+                }
+                runInference(text, onPartialResult)
+            }
+            FeatureStatus.DOWNLOADING,
+            FeatureStatus.AVAILABLE -> runInference(text, onPartialResult)
         }
     }
+
+    private fun runInference(text: String, onPartialResult: (String) -> Unit) {
+        val request = SummarizationRequest.builder(text).build()
+        // Streaming: callback fires incrementally as tokens are generated
+        summarizer.runInference(request) { newText ->
+            onPartialResult(newText)
+        }
+    }
+
+    override fun close() = summarizer.close()
 }
 ```
 
-### Material 3 Theming with Dark Mode
+---
 
-The app supports both light and dark themes using Material 3 color schemes:
+## Real Constraints to Plan For
+
+These are not hypothetical edge cases — they will affect your users.
+
+### 1. Feature Availability Gating
+
+`FeatureStatus` can be one of four states: `UNAVAILABLE`, `DOWNLOADABLE`, `DOWNLOADING`, or `AVAILABLE`. Never show AI UI elements without first checking `checkFeatureStatus()`. If the status is `UNAVAILABLE`, disable AI actions and fall back to a local heuristic (e.g., extracting the first two sentences as a pseudo-summary).
+
+### 2. Input Length Limit
+
+The Summarization API accepts **up to 4,000 tokens** (approximately 3,000 English words). For `InputType.ARTICLE`, the input must also be **at least 400 characters**. If a note exceeds the token limit, either enable auto-truncation:
 
 ```kotlin
-private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF1A73E8),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFD2E3FC),
-    secondary = Color(0xFF5F6368),
-    surface = Color(0xFFFAFAFA),
-    background = Color.White,
-)
+SummarizerOptions.builder(context)
+    .setInputType(InputType.ARTICLE)
+    .setOutputType(OutputType.THREE_BULLETS)
+    .setLanguage(Language.ENGLISH)
+    .setLongInputAutoTruncationEnabled(true)  // trims from the end
+    .build()
+```
 
-@Composable
-fun SmartNotesTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
-) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-    MaterialTheme(colorScheme = colorScheme, content = content)
-}
+or segment the note into 4,000-token chunks and summarize each, then combine.
+
+### 3. AICore Quota Enforcement
+
+AICore enforces **per-app inference quotas**. Exceeding the rate limit returns `ErrorCode.BUSY`. Exceeding a longer-duration quota (e.g., daily) returns `ErrorCode.PER_APP_BATTERY_USE_QUOTA_EXCEEDED`. Implement exponential backoff for `BUSY` responses and surface a non-blocking message for quota exhaustion rather than crashing.
+
+### 4. Background Use is Blocked
+
+Inference is **only permitted when the app is the top foreground application**. Calling the API from a background service or when the app is not in focus returns `ErrorCode.BACKGROUND_USE_BLOCKED`. Do not attempt to run batch summarization jobs in the background.
+
+### 5. Boot / AICore Initialization Delay
+
+On a freshly set up device or after an AICore reset, the system service may not have finished initialization. `checkFeatureStatus()` may return `UNAVAILABLE` transiently. This resolves on its own within minutes to a few hours once the device connects to the internet. Surface this gracefully — do not treat it as a permanent hardware incompatibility.
+
+### 6. Unlocked Bootloader
+
+ML Kit GenAI APIs do **not** work on devices with an unlocked bootloader. `checkFeatureStatus()` will return `UNAVAILABLE`.
+
+---
+
+## Streaming vs. Non-Streaming
+
+ML Kit GenAI APIs offer both modes:
+
+| Mode | When to use |
+|:---|:---|
+| **Streaming** | Long outputs (e.g., three-bullet summaries) — shows text as it generates, reducing perceived latency |
+| **Non-streaming** | Short outputs or batch processing — waits for the full result before returning |
+
+For SmartNotes summarization, streaming is the correct choice. Users see bullet points appearing in real time rather than waiting for the full response.
+
+```kotlin
+// Streaming (used in SmartNotes)
+summarizer.runInference(request) { newText -> updateUi(newText) }
+
+// Non-streaming alternative
+val result = summarizer.runInference(request).get().summary
 ```
 
 ---
 
-## Prompt Engineering for Gemini Nano
+## CI/CD Architecture
 
-Each AI feature uses a targeted prompt. Since Gemini Nano runs on-device, prompts should be concise to minimize latency:
+Our GitHub Actions pipeline validates the AI layer without requiring real hardware:
 
-| Feature | Prompt Strategy |
-|---------|----------------|
-| **Summarize** | `"Summarize the following text in 3 concise bullet points:\n\n${text}"` |
-| **Title** | `"Generate a short title (max 6 words) for this note:\n\n${text}"` |
-| **Categorize** | `"Classify this note as one of: Work, Personal, Idea, Todo. Respond with just the category name:\n\n${text}"` |
-
-The key insight: constrain the output format explicitly in the prompt. For categorization, asking for a single word response makes parsing trivial and reduces token generation time.
-
----
-
-## Performance Benchmarks
-
-We measured AI feature latency on a Pixel 9 running Android 16 (AICore cold start):
-
-| Feature | Cold Start | Warm Start | Model Loading |
-|---------|-----------|------------|---------------|
-| Summarize | ~1200ms | ~150ms | ~800ms |
-| Auto-Title | ~800ms | ~80ms | ~800ms |
-| Categorize | ~500ms | ~60ms | ~800ms |
-
-**Notes:**
-- Cold start times include Gemini Nano model loading, which is cached after the first inference
-- Subsequent invocations are significantly faster
-- The progressive `Flow` pattern gives users immediate feedback while inference completes
-- Text truncation at 512 tokens prevents context window issues
-
----
-
-## Risks and Mitigations
-
-| Risk | Mitigation |
-|------|-----------|
-| Gemini Nano not available on device | Detect via AICore API at startup; show graceful fallback UI |
-| Model cold-start latency | Show loading state with progress indicator |
-| Context window limits for long notes | Truncate input to 512 tokens with user-facing warning |
-| Device compatibility | Target Android 16+; validate via `GooglePlayServicesUtil` |
-
----
-
-## Publishing and CI/CD
-
-The blog itself is built with **Astro** and deployed to GitHub Pages on every push to `main`. The full pipeline is:
-
-1. Push markdown to `blog/blog/src/content/blog/`
-2. GitHub Actions runs `npm ci && npm run build`
-3. Output is deployed via `actions/deploy-pages@v4`
-4. Post is live at `https://rakesh1988.github.io/mobile-infra-blog`
-
-The CI workflow also runs a frontmatter linter on every PR to catch missing metadata before merge.
+1. **Unit / ViewModel tests**: The `:core:ai` interface is mocked. Standard pull request runs execute on standard Linux VMs in under 9 minutes.
+2. **Instrumented tests**: Nightly runs on physical Pixel 9 devices in a device lab validate real `checkFeatureStatus()` → `runInference()` flows against AICore.
+3. **APK size audits**: A CI step runs `measure-binary-size` on every merge to `main`. Because Gemini Nano model weights are managed externally by AICore (shared across all apps on the device), the ML Kit dependency adds only the client wrapper to your APK — not the model itself.
 
 ---
 
 ## Conclusion
 
-Building SmartNotes with Gemini Nano shows that on-device AI is production-ready today. The key takeaways:
+ML Kit's GenAI APIs are the correct, documented integration path for Gemini Nano on Android. The key architectural principles:
 
-- **Multi-module architecture** keeps concerns separated and makes the app testable
-- **Gemini Nano via ML Kit AICore** delivers capable language inference with no network calls
-- **Jetpack Compose with Material 3** provides a modern, responsive UI with minimal boilerplate
-- **On-device AI** means zero server costs, zero API keys, and complete user privacy
+- **Use `checkFeatureStatus()` before any UI** — availability is not guaranteed across the device ecosystem
+- **Respect the 4,000-token input limit** — plan for truncation or segmentation on long notes
+- **Handle quota errors with backoff** — AICore enforces rate and daily limits per app
+- **Keep inference in the foreground** — background use is explicitly blocked by AICore
+- **Do not bundle the model** — Gemini Nano is a shared system resource managed by AICore
 
-The full source is available on GitHub at [rakesh1988/mobile-infra-blog](https://github.com/rakesh1988/mobile-infra-blog). Clone the repo, open `smartnotes/` in Android Studio, and run it on an Android 16+ device or emulator.
-
-*This is the first in a series on mobile infrastructure and automation. Follow along for deep dives into CI/CD pipelines, device lab automation, build optimization, and more.*
+Sample code from Google: [googlesamples/mlkit — android/genai](https://github.com/googlesamples/mlkit/tree/master/android/genai)
