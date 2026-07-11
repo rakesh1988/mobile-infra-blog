@@ -7,6 +7,6 @@ export default defineConfig({
   base: "/mobile-infra-blog",
   integrations: [mdx(), sitemap()],
   build: {
-    format: "file",
+    format: "directory",
   },
 });
