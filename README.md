@@ -136,7 +136,3 @@ This section contains structured context and rules for AI assistants (like Claud
 4.  **GitHub Actions**:
     - The `.github/workflows/deploy.yml` file is configured to run at the repository root and output the static build to `dist/`. Keep this directory targeting intact.
 
-5.  **Git Commits**:
-    - If you are an AI assistant making a git commit, always append:
-      `Co-Authored-By: Paperclip <noreply@paperclip.ing>`
-      to the end of the commit message.
