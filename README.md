@@ -1,6 +1,6 @@
 # Mobile Infrastructure & Automation Blog Agency
 
-Welcome to the central repository for the **Mobile Infrastructure & Automation Blog Agency**. This project contains both our content publishing platform (built with Astro) and the codebases for demo projects used in our technical articles (e.g., the `smartnotes` Android application).
+Welcome to the central repository for the **Mobile Infrastructure & Automation Blog Agency**. This project contains our content publishing platform built with Astro and deployed to GitHub Pages.
 
 We follow a hybrid publishing model: we host the canonical version of all articles on our static site (deployed to GitHub Pages) and syndicate them to Medium to leverage their built-in audience and distribution channels.
 
@@ -67,10 +67,6 @@ The project is structured to co-locate the website infrastructure, content posts
 │   │   ├── index.astro         # Site landing page (home)
 │   │   └── rss.xml.js          # Automated RSS feed generation
 │   └── styles/                 # Styling rules (global.css)
-├── smartnotes/                 # Demo Android application (Gemini Nano on-device AI)
-│   ├── app/                    # Jetpack Compose UI & ViewModels
-│   ├── core/                   # Room database, AI service layers
-│   └── build.gradle.kts        # Gradle multi-module project configuration
 ├── templates/                  # Post templates
 │   └── post.md                 # Markdown template for writing new articles
 ├── astro.config.mjs            # Astro project settings (base path configured as "/blog")
