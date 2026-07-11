@@ -2,46 +2,51 @@
 
 ## Platform & Strategy
 
-We use a Medium-first publishing strategy:
-1. **Medium**: Our primary publishing platform. All articles are published directly on Medium to leverage its platform distribution and built-in audience.
-2. **GitHub**: Used for draft management, team review, and automated frontmatter checks. It also hosts our demo codebase (e.g., the `smartnotes` Android project). We do not deploy a self-hosted Astro site.
+We use a hybrid publishing strategy to maximize reach and ownership:
+1. **GitHub Pages (Astro)**: Our primary home. Owns the brand, SEO, and permanent archive.
+2. **Medium**: Distribution channel. Used to reach a wider audience and drive traffic back to our site.
 
 ---
 
 ## Post Lifecycle
 
 ```
-Draft (local/PR) → CI Checks & Review → Merge to main → Publish to Medium
+Draft (local/PR) → Review → Publish to GitHub Pages → Cross-post to Medium
 ```
 
 ### 1. Writing a Draft
-Write your post in the `drafts/` directory as Markdown (`.md`).
-Create a new file using the template in `templates/post.md` and populate the frontmatter:
+Write your post in `src/content/blog/` as Markdown (`.md`) or MDX (`.mdx`).
+Set the `draft` flag to `true` in the frontmatter:
 
 ```yaml
 ---
 title: "Your Post Title"
 description: "A concise 2-3 sentence summary"
-publishDate: 2026-07-11
+pubDate: 2026-07-11
 tags: ["mobile", "ci-cd", "android"]
-status: draft
+draft: true
 ---
 ```
 
+Preview your changes locally:
+```bash
+npm run dev
+```
+
 ### 2. Review
-Open a Pull Request against `main`. 
-- The CI workflow (`ci.yml`) automatically checks that your draft in `drafts/` starts with a valid YAML frontmatter block.
-- The reviewer (CTO or CEO) reviews the post for technical accuracy, depth, and engineering credibility.
+Open a Pull Request against `main`. The reviewer (CTO or CEO) checks accuracy, depth, and engineering credibility.
 
-### 3. Merge
-Once the PR is approved and CI checks pass, merge the PR to `main`. This indicates the draft is finalized and approved for publishing.
+### 3. Primary Publish (GitHub Pages)
+Once approved:
+1. Set `draft: false` in the post's frontmatter.
+2. Merge the PR to `main`.
+3. The GitHub Actions pipeline (`deploy.yml`) builds the site and deploys it automatically.
 
-### 4. Publish to Medium
-After merging to `main`:
-1. Copy the Markdown content into Medium's editor.
-2. Format the post (e.g., code snippets, headers, images) on Medium.
-3. Since Medium is the primary publisher, no external canonical URL is required.
-4. Add relevant tags and publish the post on Medium.
+### 4. Distribution (Medium)
+After the live post is deployed:
+1. Copy the content into Medium's editor.
+2. **Crucial**: Set the "Canonical URL" in Medium settings to the URL of the post on our GitHub Pages site (e.g., `https://rakesh1988.github.io/blog/hello-world/`). This ensures Google attributes original authorship to our domain.
+3. Add tags in Medium and publish.
 
 ---
 
@@ -49,27 +54,42 @@ After merging to `main`:
 
 ```
 .
-├── .github/workflows/      # CI workflows (frontmatter check)
-├── drafts/                 # Blog post drafts (Markdown)
-├── public/                 # Static assets
-├── src/                    # Astro website source code (local preview if needed)
+├── .github/workflows/      # GitHub Actions deploy workflow
+├── public/                 # Static assets (images, favicons)
+├── src/
+│   ├── components/         # Reusable Astro components
+│   ├── content/
+│   │   ├── blog/           # Blog posts (Source of Truth)
+│   │   └── config.ts       # Post frontmatter schema definition
+│   ├── layouts/            # Page layouts
+│   ├── pages/              # Astro routes & pages
+│   └── styles/             # Global styling
 ├── templates/              # Standard post templates
 ├── smartnotes/             # Demo Android app code
+├── astro.config.mjs        # Astro configuration (base path: /blog)
 ├── package.json            # Node dependencies and scripts
 └── CONTRIBUTING.md         # This workflow documentation
 ```
 
 ---
 
-## Technical Setup (Local Preview)
+## Technical Setup
 
-Writers can optionally run the Astro site locally to preview markdown rendering, although we publish directly to Medium.
+### Prerequisites
+- Node.js 22+
+- npm 10+
 
 ### Quick Start
 ```bash
 # Install dependencies
 npm install
 
-# Start local development server
+# Start local development server (http://localhost:4321/blog/)
 npm run dev
+
+# Build the static site locally
+npm run build
+
+# Preview the local build
+npm run preview
 ```
