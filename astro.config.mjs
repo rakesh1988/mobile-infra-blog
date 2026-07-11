@@ -4,7 +4,7 @@ import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
   site: "https://rakesh1988.github.io",
-  base: "/blog",
+  base: "/mobile-infra-blog",
   integrations: [mdx(), sitemap()],
   build: {
     format: "file",
