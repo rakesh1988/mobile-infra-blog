@@ -50,15 +50,19 @@ Instead of letting a third-party plugin automatically upload our mappings, we in
 
 These packed mappings are then securely uploaded to our internal, air-gapped Nexus artifact repository, strictly associated with the specific `TECHNICAL_VERSION` of that build. They never leave the company's intranet.
 
-### 2. Encrypted Log Routing
-When the app crashes on a user's device, the raw, obfuscated stack trace is captured natively. Instead of broadcasting this to a cloud vendor, the app encrypts the payload and routes it through our secure API gateways directly into our internal observability platform (e.g., Splunk).
+### 2. Dual-Channel Encrypted Log Routing
+Capturing crashes in an enterprise environment requires redundancy. We use a dual-channel approach:
+* **Direct Internal API:** For critical exceptions or custom handled errors, the app encrypts the payload and routes it through our secure API gateways directly into our internal observability platform. 
+* **Google's Crash Infrastructure:** For unhandled fatal crashes, we still rely on tools like Firebase Crashlytics or Google Play Console as a fallback. The critical difference is that they are allowed to capture *only the obfuscated* stack traces. We strip out the mapping upload from the Gradle plugin, ensuring Google never receives our internal class structure.
 
 ### 3. Automated Internal Deobfuscation
-This is where the magic happens. We built a microservice that listens to the incoming crash streams in Splunk. When a new obfuscated crash arrives, the service:
-1. Reads the `TECHNICAL_VERSION` attached to the crash payload.
-2. Reaches into the secure Nexus repository and pulls down the exact `mapping.txt` for that specific build.
-3. Uses the ReTrace tool programmatically to translate the obfuscated stack trace back into human-readable code.
-4. Indexes the beautifully deobfuscated crash back into the developer dashboards.
+To restore visibility for our developers, we built a secure data pipeline. We pull the raw, obfuscated crash reports from Google's APIs and pipe them alongside our direct API logs into our internal observability platform (e.g., Splunk). 
+
+Once an obfuscated crash arrives from either channel, our custom microservice kicks in:
+1. It reads the `TECHNICAL_VERSION` attached to the crash payload.
+2. It reaches into the air-gapped Nexus repository and pulls down the exact `mapping.txt` for that specific build.
+3. It uses the ReTrace tool programmatically to translate the obfuscated stack trace back into human-readable code.
+4. It indexes the beautifully deobfuscated crash into our internal developer dashboards.
 
 ## The Impact
 
