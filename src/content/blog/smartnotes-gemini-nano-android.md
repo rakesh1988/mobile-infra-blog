@@ -3,7 +3,7 @@ title: "Building SmartNotes: On-Device AI with Gemini Nano and Jetpack Compose"
 description: "A deep dive into building a modern Android note-taking app with on-device AI using ML Kit's GenAI APIs, Room, Hilt, and Jetpack Compose."
 pubDate: 2026-07-10
 tags: ["android", "gemini-nano", "jetpack-compose", "on-device-ai", "architecture"]
-draft: false
+draft: true
 ---
 
 ## Introduction

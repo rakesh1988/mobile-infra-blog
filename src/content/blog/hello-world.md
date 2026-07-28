@@ -3,7 +3,7 @@ title: "Hello, World"
 description: "Welcome to the Mobile Infrastructure & Automation Blog"
 pubDate: 2026-07-10
 tags: ["meta", "welcome"]
-draft: false
+draft: true
 ---
 
 Welcome to the **Mobile Infrastructure & Automation Blog**.

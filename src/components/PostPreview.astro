@@ -29,8 +29,12 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_UR
 
 <style>
   .post-preview {
-    padding: 1.5rem 0;
+    padding: 1rem 0;
     border-bottom: 1px solid var(--color-border);
+  }
+
+  .post-preview:first-child {
+    padding-top: 0.5rem;
   }
 
   .post-preview:last-child {
