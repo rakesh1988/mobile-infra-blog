@@ -6,7 +6,9 @@ tags: ["Android", "OpenAPI", "Networking", "Automation", "Kotlin"]
 draft: false
 ---
 
-Connecting to backend APIs is a fundamental part of almost every mobile application. Today, many teams rely on **OpenAPI Specifications (Swagger)** to define the contract between the frontend and the backend. It provides a clear, machine-readable blueprint of all available endpoints, request parameters, and response models.
+As mobile engineering organizations scale across multiple squads and dozens of developers, maintaining architectural consistency and developer velocity becomes a primary challenge. 
+
+Connecting to backend APIs is a fundamental part of this scaling journey. Today, many teams rely on **OpenAPI Specifications (Swagger)** to define the contract between the frontend and the backend. It provides a clear, machine-readable blueprint of all available endpoints, request parameters, and response models.
 
 However, a very common anti-pattern emerges when we actually go to implement this in our apps: **We do it manually.**
 
@@ -37,7 +39,7 @@ In short: Automating the network layer means you get features delivered faster, 
 
 ## Why Automate? (The Technical Perspective)
 
-If the specification already knows everything about the API, our code should be generated from it directly. Here is why automating your OpenAPI network layer is a game-changer for mobile infrastructure:
+If the specification already knows everything about the API, our code should be generated from it directly. Here is why automating your OpenAPI network layer is a game-changer for scaling mobile engineering teams:
 
 ### 1. Eliminates Boilerplate
 Developers should spend their time building features, not writing data classes. By generating the network layer, you instantly eliminate hundreds (or thousands) of lines of boilerplate code.
@@ -176,5 +178,5 @@ The natural next step for this idea is to extract this entire logic into a **cus
 
 ## Conclusion
 
-By shifting from manual model creation to automated OpenAPI generation, we transformed a tedious, error-prone chore into a robust and frictionless pipeline. Our models are always in sync with the backend, typos are a thing of the past, and our engineers can focus on building features rather than writing boilerplate network layers.
+As an engineering leader, your goal is to remove friction so your squads can deliver value. By shifting from manual model creation to automated OpenAPI generation, we transformed a tedious, error-prone chore into a robust and frictionless pipeline. Our models are always in sync with the backend, typos are a thing of the past, and our engineers can focus on building product features rather than writing boilerplate network layers.
 
