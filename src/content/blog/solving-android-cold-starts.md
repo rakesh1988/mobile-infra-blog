@@ -68,6 +68,6 @@ To prevent regressions, we integrated performance testing directly into our CI/C
 2. During our nightly GitLab CI runs, these benchmarks execute on physical devices in a cloud device farm.
 3. If a pull request introduces an SDK or architectural change that increases cold start time by more than a defined threshold (e.g., 150ms), the pipeline automatically fails, alerting the team before the bloat ever reaches production.
 
-*(Want to see exactly how to write this test? Check out my follow-up guide on [Writing Your First Jetpack Macrobenchmark](/blog/writing-jetpack-macrobenchmark/).)*
+*(Want to see exactly how to write this test? Check out my follow-up guide on [Writing Your First Jetpack Macrobenchmark](/mobile-infra-blog/writing-jetpack-macrobenchmark/).)*
 
 By combining strict profiling, R8 awareness, and automated CI gatekeeping, you stop playing whack-a-mole with performance bugs and build a culture of sustained engineering excellence.
