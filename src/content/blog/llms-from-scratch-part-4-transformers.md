@@ -121,6 +121,10 @@ Hit the Run button!
 
 Notice how the Softmax function forced "Apple" to allocate 60.3% of its attention to "ate", and 36.5% to "delicious", whilst almost entirely ignoring "I" and "a". 
 
+> [!NOTE]
+> **Why is it called Softmax?** 
+> If we used a "Hard Max" function, the highest score would instantly get `100%` of the attention, and everything else would get `0%`. That destroys all nuance! "Soft Max" softens this approach. It creates a probability distribution where the biggest number gets the most attention, but runner-ups still get a fair share, and the total always perfectly adds up to 100%.
+
 By multiplying the Values of those words by those massive attention percentages, the embedding for "Apple" was pulled from a neutral `0.50` all the way up to `0.85`! The math dynamically shifted it into a "Food" vector!
 
 ## The Final Output (Predicting the Next Word)
