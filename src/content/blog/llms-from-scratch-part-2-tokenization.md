@@ -1,5 +1,5 @@
 ---
-title: "Demystifying LLMs Part 2: How AI Reads (Byte Pair Encoding)"
+title: "Demystifying LLMs (Part 2 of 4): How AI Reads (Byte Pair Encoding)"
 description: "Language models don't see words the way humans do. In Part 2, we build a Byte Pair Encoding (BPE) Tokenizer in Kotlin to understand how AI parses language."
 pubDate: "2026-07-14"
 tags: ["AI SDLC", "Kotlin", "Architecture", "LLMs"]

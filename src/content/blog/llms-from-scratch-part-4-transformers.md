@@ -1,5 +1,5 @@
 ---
-title: "Demystifying LLMs Part 4: Attention and The Transformer Engine"
+title: "Demystifying LLMs (Part 4 of 4): Attention and The Transformer Engine"
 description: "The grand finale. How do words dynamically change their meaning based on context? We explore the Google paper that changed the world and write a Self-Attention loop in Kotlin."
 pubDate: "2026-07-28"
 tags: ["AI SDLC", "Kotlin", "Architecture", "LLMs"]

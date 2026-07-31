@@ -1,5 +1,5 @@
 ---
-title: "Demystifying LLMs Part 1: From If-Statements to Neural Networks"
+title: "Demystifying LLMs (Part 1 of 4): From If-Statements to Neural Networks"
 description: "How did we get from simple chatbots to ChatGPT? Part 1 of our series breaks down the illusion of rule-based systems and introduces the foundations of Neural Networks using Kotlin."
 pubDate: "2026-07-07"
 tags: ["AI SDLC", "Kotlin", "Architecture", "LLMs"]

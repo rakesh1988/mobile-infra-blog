@@ -1,5 +1,5 @@
 ---
-title: "Demystifying LLMs Part 3: The Mathematics of Meaning (Embeddings)"
+title: "Demystifying LLMs (Part 3 of 4): The Mathematics of Meaning (Embeddings)"
 description: "How does a computer know that a cat and a kitten are related? In Part 3, we dive into the beautiful vector mathematics of Word Embeddings using a simple Movie Rating analogy."
 pubDate: "2026-07-21"
 tags: ["AI SDLC", "Kotlin", "Architecture", "LLMs"]
