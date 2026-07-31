@@ -19,7 +19,7 @@ Instead of relying on AI just to write code faster (like GitHub Copilot), we bui
 ```mermaid
 graph TD
     A[Scheduled CI Job] -->|GitLab API| B(Fetch MRs & Comments)
-    B --> C{Noise Filter}
+    B --> C[Noise Filter]
     C -->|Strip bots & LGTMs| D[Clean Human Discussions]
     D --> E((LLM Engine))
     E -->|Identify Anti-patterns| F[Generated Guideline Updates]
