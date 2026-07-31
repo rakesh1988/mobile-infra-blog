@@ -5,6 +5,9 @@ import Analytics from "../../components/Analytics.astro";
 import { getCollection } from "astro:content";
 
 export async function getStaticPaths() {
+  function slugify(text: string) {
+    return text.toLowerCase().replace(/[\s\/]+/g, '-').replace(/[^\w-]+/g, '');
+  }
   const allPosts = await getCollection("blog");
   const publishedPosts = allPosts.filter((p) => !p.data.draft);
   
@@ -16,21 +19,21 @@ export async function getStaticPaths() {
       .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
       
     return {
-      params: { tag },
-      props: { posts: filteredPosts },
+      params: { tag: slugify(tag) },
+      props: { posts: filteredPosts, tagName: tag },
     };
   });
 }
 
 const { tag } = Astro.params;
-const { posts } = Astro.props;
+const { posts, tagName } = Astro.props;
 ---
 
-<BaseLayout title={`Posts tagged with "${tag}"`}>
+<BaseLayout title={`Posts tagged with "${tagName}"`}>
   <Analytics slot="head" />
   
   <section class="tag-header">
-    <h1>Tag: <span>{tag}</span></h1>
+    <h1>Tag: <span>{tagName}</span></h1>
     <p>Found {posts.length} {posts.length === 1 ? "post" : "posts"}</p>
   </section>
 
