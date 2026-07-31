@@ -46,6 +46,10 @@ The network calculates a mathematical **Attention Score** by comparing the Query
 
 Through this beautiful mathematical mixing process, the word "Apple" has dynamically absorbed the context of its surroundings. It is no longer just the generic dictionary definition of Apple; it is now a highly specific, context-aware mathematical representation of *a fruit being eaten*.
 
+> [!NOTE]
+> **Wait, does this require 10,000 GPUs again?**
+> No! In Part 3, we learned that *Training* the base embeddings (nudging the random numbers via Backpropagation) takes months on massive GPU clusters. But Self-Attention happens during *Inference* (when you type a prompt into ChatGPT). The base embeddings are already frozen. Self-Attention is just a quick mathematical mixing of those frozen numbers that happens instantly on the fly!
+
 ## The Code: Self-Attention in Kotlin
 
 Let's write a highly simplified version of this Self-Attention loop in Kotlin. 
