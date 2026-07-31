@@ -50,9 +50,9 @@ Through this beautiful mathematical mixing process, the word "Apple" has dynamic
 > **Wait, does this require 10,000 GPUs again?**
 > No! Think of it like a dictionary. 
 > 
-> **Part 3 (Training):** This is the process of *writing* the dictionary. Reading the entire internet and nudging those 12,288 numbers for every word takes months on massive GPU clusters. 
+> **Training (What we discussed in [Part 3](/mobile-infra-blog/llms-from-scratch-part-3-embeddings/)):** This is the process of *writing* the dictionary. Reading the entire internet and nudging those 12,288 numbers for every word takes months on massive GPU clusters. 
 > 
-> **Part 4 (Inference):** This is the process of *reading* the dictionary. When you type a prompt into ChatGPT, the dictionary is already finished and the numbers are frozen. Self-Attention is just pulling those frozen numbers out of the dictionary and doing some quick math to mix them together for your specific sentence. A single server (or even a phone) can do this instantly!
+> **Inference (Self-Attention):** This is the process of *reading* the dictionary. When you type a prompt into ChatGPT, the dictionary is already finished and the numbers are frozen. Self-Attention is just pulling those frozen numbers out of the dictionary and doing some quick math to mix them together for your specific sentence. A single server (or even a phone) can do this instantly!
 
 ## The Code: Self-Attention in Kotlin
 
