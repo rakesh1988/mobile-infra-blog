@@ -123,7 +123,7 @@ Notice how the Softmax function forced "Apple" to allocate 60.3% of its attentio
 
 > [!NOTE]
 > **Why is it called Softmax?** 
-> If we used a "Hard Max" function, the highest score would instantly get `100%` of the attention, and everything else would get `0%`. That destroys all nuance! "Soft Max" softens this approach. It creates a probability distribution where the biggest number gets the most attention, but runner-ups still get a fair share, and the total always perfectly adds up to 100%.
+> If we used a "Hard Max" function, the highest score would instantly get `100%` of the attention, and everything else would get `0%`. That destroys all nuance! "[Soft Max](https://en.wikipedia.org/wiki/Softmax_function)" softens this approach. It creates a probability distribution where the biggest number gets the most attention, but runner-ups still get a fair share, and the total always perfectly adds up to 100%.
 
 By multiplying the Values of those words by those massive attention percentages, the embedding for "Apple" was pulled from a neutral `0.50` all the way up to `0.85`! The math dynamically shifted it into a "Food" vector!
 
@@ -131,13 +131,21 @@ By multiplying the Values of those words by those massive attention percentages,
 
 So, what happens after all of this? 
 
-Once every single word in the sentence has attended to every other word, and all the embeddings have been dynamically updated through multiple layers of this cocktail party... the Transformer takes the very last updated embedding in the sequence. 
+Once the embedding for "Apple" has been dynamically updated via Self-Attention, it is passed through a standard **Feed-Forward Neural Network** (exactly like the one we built in [Part 1](/mobile-infra-blog/llms-from-scratch-part-1-neural-nets/)!). This allows the model to "think" and process the new context. 
 
-It pushes that final embedding through one massive mathematical filter (the output Softmax layer). This layer maps the embedding's 12,288 numbers into a probability distribution over the entire 50,000-word vocabulary we created in [Part 2](/mobile-infra-blog/llms-from-scratch-part-2-tokenization/).
+This process (Self-Attention followed by a Feed-Forward Neural Network) repeats dozens of times across multiple layers inside the Transformer. 
 
-It spits out the single most statistically likely next word (for example, `"pie"`). 
+Finally, the Transformer takes the very last updated embedding in the sequence and pushes it through one final **Softmax** layer. This layer multiplies the final 12,288-dimensional embedding against our entire 50,000-word Tokenizer vocabulary from [Part 2](/mobile-infra-blog/llms-from-scratch-part-2-tokenization/). 
 
-That word is printed to the screen, appended to the sentence, and the entire massive loop starts over again to predict the word after that.
+It calculates a final percentage score for every single word in the English language:
+*   `pie`: **82.0%**
+*   `juice`: **15.0%**
+*   `tree`: **2.9%**
+*   `iPhone`: **0.0001%** *(Because our Attention mechanism shifted "Apple" toward food, tech words are mathematically destroyed!)*
+
+The model spits out the highest-scoring word: `"pie"`. 
+
+That word is printed to the screen, appended to the sentence (*"I ate a delicious Apple pie"*), and the entire massive loop starts over again to predict the word after that.
 
 **And that is how ChatGPT works.** 
 
