@@ -147,7 +147,19 @@ It calculates a final percentage score for every single word in the English lang
 
 The model spits out the highest-scoring word: `"pie"`. 
 
-That word is printed to the screen, filling in the blank (*"I ate a delicious Apple pie"*), and the entire massive loop starts over again to predict the word after that.
+## The Autoregressive Loop (Writing a Story)
+
+You might be wondering: *If the model just predicts the next word, how does ChatGPT write a 5-page story?*
+
+It uses something called an **Autoregressive Loop**. 
+Once the model predicts `"pie"`, it doesn't stop. It takes that word, glues it to the end of your original sentence, and feeds the *entire* new string back into the Transformer from the very beginning.
+
+1. *"I ate a delicious Apple ___"* ➡️ Predicts **pie**
+2. *"I ate a delicious Apple pie ___"* ➡️ Predicts **and**
+3. *"I ate a delicious Apple pie and ___"* ➡️ Predicts **it**
+4. *"I ate a delicious Apple pie and it ___"* ➡️ Predicts **was**
+
+It just plays "fill in the blank" over and over again, thousands of times in a row, at lightning speed. It generates essays, code, and poetry exactly one token at a time.
 
 **And that is how ChatGPT works.** 
 
