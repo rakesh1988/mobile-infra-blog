@@ -52,7 +52,7 @@ Through this beautiful mathematical mixing process, the word "Apple" has dynamic
 > 
 > **Training (What we discussed in [Part 3](/mobile-infra-blog/llms-from-scratch-part-3-embeddings/)):** This is the process of *writing* the dictionary. Reading the entire internet and nudging those 12,288 numbers for every word takes months on massive GPU clusters. 
 > 
-> **Inference (Self-Attention):** This is the process of *reading* the dictionary. When you type a prompt into ChatGPT, the dictionary is already finished and the numbers are frozen. Self-Attention is just pulling those frozen numbers out of the dictionary and doing some quick math to mix them together for your specific sentence. A single server (or even a phone) can do this instantly!
+> **Inference (Self-Attention):** This is the process of *reading* the dictionary. When you type a prompt into ChatGPT, the dictionary is already finished. There is only *one* frozen entry for the word "Apple" (a perfectly neutral `0.50`). But during Inference, Self-Attention pulls out that frozen number and dynamically mixes it with the numbers of the surrounding words! If it's next to "ate", the math temporarily shifts "Apple" to `0.85` (Food). If it's next to "stock", the math temporarily shifts it to `-0.85` (Finance). A single server (or even a phone) can do this quick mixing instantly!
 
 ## The Code: Self-Attention in Kotlin
 
