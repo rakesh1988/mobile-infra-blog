@@ -8,11 +8,13 @@ draft: false
 
 In [**Part 3** of this series](/mobile-infra-blog/llms-from-scratch-part-3-embeddings/), we learned that an LLM understands the meaning of a word by representing it as a massive array of numbers called an **Embedding**. We saw how GPT-4 uses an array of 12,288 numbers to mathematically plot every single word on a graph based on thousands of invisible "vibes".
 
+> **Goal of this post:** By the end of this grand finale, we will tie together everything we learned in Parts 1, 2, and 3. We will explore how words dynamically change their mathematical meaning based on context, and we will finally build the complete, end-to-end pipeline that powers ChatGPT to predict the next word!
+
 But this creates a massive, glaring problem. 
 
-If the word **"Apple"** only has one static array of 12,288 numbers, what happens when it appears in these two sentences?
-1. *"I ate a delicious Apple."*
-2. *"I bought Apple stock."*
+If the word **"Apple"** only has one static array of 12,288 numbers, what happens when the model tries to predict the next word in these two sentences?
+1. *"I ate a delicious Apple ___"*
+2. *"I bought Apple ___"*
 
 If the numbers are static and frozen, the mathematical model cannot tell the difference between the fruit and the trillion-dollar tech company! It just plots them in the exact same spot on the graph. For decades, this limitation held AI back. 
 
@@ -145,7 +147,7 @@ It calculates a final percentage score for every single word in the English lang
 
 The model spits out the highest-scoring word: `"pie"`. 
 
-That word is printed to the screen, appended to the sentence (*"I ate a delicious Apple pie"*), and the entire massive loop starts over again to predict the word after that.
+That word is printed to the screen, filling in the blank (*"I ate a delicious Apple pie"*), and the entire massive loop starts over again to predict the word after that.
 
 **And that is how ChatGPT works.** 
 
