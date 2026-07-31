@@ -1,0 +1,67 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PostPreview from "../../components/PostPreview.astro";
+import Analytics from "../../components/Analytics.astro";
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+  const allPosts = await getCollection("blog");
+  const publishedPosts = allPosts.filter((p) => !p.data.draft);
+  
+  const uniqueTags = [...new Set(publishedPosts.flatMap((post) => post.data.tags || []))];
+  
+  return uniqueTags.map((tag) => {
+    const filteredPosts = publishedPosts
+      .filter((post) => post.data.tags?.includes(tag))
+      .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+      
+    return {
+      params: { tag },
+      props: { posts: filteredPosts },
+    };
+  });
+}
+
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+---
+
+<BaseLayout title={`Posts tagged with "${tag}"`}>
+  <Analytics slot="head" />
+  
+  <section class="tag-header">
+    <h1>Tag: <span>{tag}</span></h1>
+    <p>Found {posts.length} {posts.length === 1 ? "post" : "posts"}</p>
+  </section>
+
+  <section class="posts">
+    {posts.map((post) => (
+      <PostPreview post={post} />
+    ))}
+  </section>
+</BaseLayout>
+
+<style>
+  .tag-header {
+    text-align: left;
+    padding: 1.5rem 0 2rem;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 2rem;
+  }
+
+  .tag-header h1 {
+    font-size: 2.2rem;
+    line-height: 1.15;
+    margin-bottom: 0.5rem;
+  }
+  
+  .tag-header h1 span {
+    color: var(--color-primary);
+  }
+
+  .tag-header p {
+    font-size: 1.05rem;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+</style>

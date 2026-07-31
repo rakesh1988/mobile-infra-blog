@@ -22,7 +22,7 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_UR
   <p>{description}</p>
   {tags.length > 0 && (
     <div class="tags">
-      {tags.map((tag) => <span class="tag">{tag}</span>)}
+      {tags.map((tag) => <a href={`${baseUrl}tags/${tag}/`} class="tag">{tag}</a>)}
     </div>
   )}
 </article>
@@ -73,5 +73,13 @@ const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_UR
     border-radius: 999px;
     font-size: 0.75rem;
     color: var(--color-text-muted);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  
+  a.tag:hover {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
   }
 </style>
